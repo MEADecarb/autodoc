@@ -94,7 +94,7 @@ if st.button("Generate Documents") and template_file and csv_file and unique_nam
             replace_placeholders(new_document, row)
 
             # Define the file path for the new document and change name
-            file_name = f"{unique_name}_{row['grantee_name']}_{row['lea_name']}_{row['aoi']}_{document_type.replace(' ', '')}.docx"
+            file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
             doc_buffer = BytesIO()
             new_document.save(doc_buffer)
             doc_buffer.seek(0)
