@@ -18,7 +18,21 @@ st.title("Auto Document Generator")
 # Information about session history clearing
 st.markdown("""
 ### Important Information
-This application clears its history after each use to ensure that no data is stored. Every time you use the app, it resets the session state, so your uploaded files and generated documents are not saved beyond the current session.
+This application is designed with your privacy and data security in mind. Here's how it works:
+
+1. **Session State Reset:** At the start of each session, the application resets its internal session state. This means that any data from previous sessions is cleared, ensuring that no information carries over from one use to the next.
+
+2. **Temporary Data Storage:** When you upload your document template and CSV file, this data is only stored temporarily within the current session. As soon as you close the app or start a new session, this data is automatically deleted.
+
+3. **No Permanent Storage:** The app does not store any of your uploaded files or generated documents permanently. Once you download the generated documents, they are removed from the app's memory.
+
+4. **Security:** This process helps ensure that your sensitive information remains secure and is not accessible after you finish using the app.
+
+In summary, every time you use the app, it starts with a clean slate, clearing all previous session data to protect your privacy and keep your data secure.
+
+### How-to
+1. Download the example CSV and populate the data
+2. In your template document, place the CSV header names wherever you want the corresponding values to appear. For example, if you want the grantee's name to appear in four different places in your document, write grantee_name in each of those locations. 
 """)
 
 # Example CSV content
