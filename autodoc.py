@@ -29,10 +29,6 @@ This application is designed with your privacy and data security in mind. Here's
 4. **Security:** This process helps ensure that your sensitive information remains secure and is not accessible after you finish using the app.
 
 In summary, every time you use the app, it starts with a clean slate, clearing all previous session data to protect your privacy and keep your data secure.
-
-### How-to
-1. Download the example CSV and populate the data
-2. In your template document, place the CSV header names wherever you want the corresponding values to appear. For example, if you want the grantee's name to appear in four different places in your document, write grantee_name in each of those locations. 
 """)
 
 # Example CSV content
@@ -58,7 +54,8 @@ if template_file:
 # Upload the CSV file
 csv_file = st.file_uploader("Upload Data CSV (.csv)", type="csv")
 if csv_file:
-    data = list(csv.DictReader(csv_file))
+    # Open the CSV file in text mode
+    data = list(csv.DictReader(csv_file.getvalue().decode("utf-8").splitlines()))
 
 # Input for unique file name prefix
 unique_name = st.text_input("Enter a unique name for the generated files:")
