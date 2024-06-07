@@ -6,10 +6,10 @@ from copy import deepcopy
 from io import BytesIO
 
 # Streamlit app
-st.title("Award Letter Generator")
+st.title("Auto Document Generator")
 
 # Upload the template document
-template_file = st.file_uploader("Upload Award Letter Template (.docx)", type="docx")
+template_file = st.file_uploader("Upload Document Template (.docx)", type="docx")
 if template_file:
     template_document = Document(template_file)
 
@@ -17,6 +17,15 @@ if template_file:
 csv_file = st.file_uploader("Upload Data CSV (.csv)", type="csv")
 if csv_file:
     data = list(csv.DictReader(csv_file))
+
+# Input for unique file name prefix
+unique_name = st.text_input("Enter a unique name for the generated files:")
+
+# Dropdown for document type selection
+document_type = st.selectbox(
+    "Select the type of document:",
+    ["Award Letter", "Grant Agreement", "Commitment Letter", "Other"]
+)
 
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
@@ -33,7 +42,7 @@ def replace_placeholders(document, data):
                     paragraph.text = paragraph.text.replace(key, value)
 
 # Generate documents and create a zip file
-if st.button("Generate Documents") and template_file and csv_file:
+if st.button("Generate Documents") and template_file and csv_file and unique_name:
     document_paths = []
     zip_buffer = BytesIO()
 
@@ -46,7 +55,7 @@ if st.button("Generate Documents") and template_file and csv_file:
             replace_placeholders(new_document, row)
 
             # Define the file path for the new document and change name
-            file_name = f"{row['lea_name']}_{row['aoi_']}_AwardLetter.docx"
+            file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
             doc_buffer = BytesIO()
             new_document.save(doc_buffer)
             doc_buffer.seek(0)
