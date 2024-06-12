@@ -57,8 +57,11 @@ if csv_file:
     # Open the CSV file in text mode
     try:
         data = list(csv.DictReader(csv_file.getvalue().decode("utf-8").splitlines()))
+        headers = data[0].keys()
     except UnicodeDecodeError:
         st.error("There was an error decoding the CSV file. Please ensure it is in UTF-8 format.")
+    except IndexError:
+        st.error("The CSV file appears to be empty. Please provide a valid CSV file.")
 
 # Input for unique file name prefix
 unique_name = st.text_input("Enter a unique name for the generated files:")
@@ -74,14 +77,14 @@ def replace_placeholders(document, data):
     for key, value in data.items():
         # Replace placeholders in the paragraphs
         for paragraph in document.paragraphs:
-            if key in paragraph.text:
-                paragraph.text = paragraph.text.replace(key, value)
+            if f"{{{key}}}" in paragraph.text:
+                paragraph.text = paragraph.text.replace(f"{{{key}}}", value)
         # Replace placeholders in the header
         for section in document.sections:
             header = section.header
             for paragraph in header.paragraphs:
-                if key in paragraph.text:
-                    paragraph.text = paragraph.text.replace(key, value)
+                if f"{{{key}}}" in paragraph.text:
+                    paragraph.text = paragraph.text.replace(f"{{{key}}}", value)
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
@@ -90,11 +93,6 @@ if st.button("Generate Documents") and template_file and csv_file and unique_nam
 
     with zipfile.ZipFile(zip_buffer, 'w') as zipf:
         for row in data:
-            # Check for missing keys before processing
-            if 'grantee_name' not in row or 'grant_number' not in row:
-                st.error("Missing required fields in the CSV file.")
-                continue
-
             # Create a new document based on the template
             new_document = deepcopy(template_document)
 
