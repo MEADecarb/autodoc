@@ -55,7 +55,10 @@ if template_file:
 csv_file = st.file_uploader("Upload Data CSV (.csv)", type="csv")
 if csv_file:
     # Open the CSV file in text mode
-    data = list(csv.DictReader(csv_file.getvalue().decode("utf-8").splitlines()))
+    try:
+        data = list(csv.DictReader(csv_file.getvalue().decode("utf-8").splitlines()))
+    except UnicodeDecodeError:
+        st.error("There was an error decoding the CSV file. Please ensure it is in UTF-8 format.")
 
 # Input for unique file name prefix
 unique_name = st.text_input("Enter a unique name for the generated files:")
@@ -87,6 +90,11 @@ if st.button("Generate Documents") and template_file and csv_file and unique_nam
 
     with zipfile.ZipFile(zip_buffer, 'w') as zipf:
         for row in data:
+            # Check for missing keys before processing
+            if 'grantee_name' not in row or 'grant_number' not in row:
+                st.error("Missing required fields in the CSV file.")
+                continue
+
             # Create a new document based on the template
             new_document = deepcopy(template_document)
 
