@@ -33,9 +33,9 @@ In summary, every time you use the app, it starts with a clean slate, clearing a
 
 # Example CSV content
 example_csv = """
-grantee_name,grant_number,grantee_street,grantee_citystatezip,award_amount_numerical,convert_numbers_to_words,contact_name,contact_title,contact_number,contact_email,sig_name,sig_title
-Example Grantee,12345,123 Example St,Example City, ST 12345,1000,One Thousand,Jane Doe,Director,555-1234,jane.doe@example.com,John Smith,CEO
-Another Grantee,67890,456 Another St,Another City, ST 67890,2000,Two Thousand,John Roe,Manager,555-5678,john.roe@example.com,Jane Smith,CFO
+grantee_name,grant_number,grantee_street,grantee_citystatezip,award_amount_numerical,convert_numbers_to_words,contact_name,contact_title,contact_number,contact_email,sig_name,sig_title,grantee_region,Cities_Counties_served
+Example Grantee,12345,123 Example St,Example City, ST 12345,1000,One Thousand,Jane Doe,Director,555-1234,jane.doe@example.com,John Smith,CEO,Example Region,Example Cities
+Another Grantee,67890,456 Another St,Another City, ST 67890,2000,Two Thousand,John Roe,Manager,555-5678,john.roe@example.com,Jane Smith,CFO,Another Region,Another Cities
 """
 
 # Button to download the example CSV file
@@ -77,6 +77,14 @@ document_type = st.selectbox(
     ["Award Letter", "Grant Agreement", "Commitment Letter", "Other"]
 )
 
+# Function to replace placeholders in text
+def replace_text(text, data):
+    for key, value in data.items():
+        placeholder = f"{{{key}}}"
+        if placeholder in text:
+            text = text.replace(placeholder, value)
+    return text
+
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
     for key, value in data.items():
@@ -84,22 +92,22 @@ def replace_placeholders(document, data):
         # Replace placeholders in the paragraphs
         for paragraph in document.paragraphs:
             if placeholder in paragraph.text:
-                st.write(f"Replacing {placeholder} with {value} in paragraph")  # Debugging statement
-                paragraph.text = paragraph.text.replace(placeholder, value)
+                paragraph.text = replace_text(paragraph.text, data)
         # Replace placeholders in the tables
         for table in document.tables:
             for row in table.rows:
                 for cell in row.cells:
-                    if placeholder in cell.text:
-                        st.write(f"Replacing {placeholder} with {value} in table cell")  # Debugging statement
-                        cell.text = cell.text.replace(placeholder, value)
-        # Replace placeholders in the header
+                    cell.text = replace_text(cell.text, data)
+        # Replace placeholders in the headers and footers
         for section in document.sections:
             header = section.header
             for paragraph in header.paragraphs:
                 if placeholder in paragraph.text:
-                    st.write(f"Replacing {placeholder} with {value} in header")  # Debugging statement
-                    paragraph.text = paragraph.text.replace(placeholder, value)
+                    paragraph.text = replace_text(paragraph.text, data)
+            footer = section.footer
+            for paragraph in footer.paragraphs:
+                if placeholder in paragraph.text:
+                    paragraph.text = replace_text(paragraph.text, data)
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
