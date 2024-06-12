@@ -84,12 +84,21 @@ def replace_placeholders(document, data):
         # Replace placeholders in the paragraphs
         for paragraph in document.paragraphs:
             if placeholder in paragraph.text:
+                st.write(f"Replacing {placeholder} with {value} in paragraph")  # Debugging statement
                 paragraph.text = paragraph.text.replace(placeholder, value)
+        # Replace placeholders in the tables
+        for table in document.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    if placeholder in cell.text:
+                        st.write(f"Replacing {placeholder} with {value} in table cell")  # Debugging statement
+                        cell.text = cell.text.replace(placeholder, value)
         # Replace placeholders in the header
         for section in document.sections:
             header = section.header
             for paragraph in header.paragraphs:
                 if placeholder in paragraph.text:
+                    st.write(f"Replacing {placeholder} with {value} in header")  # Debugging statement
                     paragraph.text = paragraph.text.replace(placeholder, value)
 
 # Generate documents and create a zip file
