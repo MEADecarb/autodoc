@@ -56,11 +56,13 @@ csv_file = st.file_uploader("Upload Data CSV (.csv)", type="csv")
 if csv_file:
     # Open the CSV file in text mode
     try:
+        # Read the CSV file and strip any leading/trailing spaces from the headers
         data = list(csv.DictReader(csv_file.getvalue().decode("utf-8").splitlines()))
         if not data:
             st.error("The CSV file is empty.")
         else:
-            headers = data[0].keys()
+            headers = [header.strip() for header in data[0].keys()]
+            st.write("CSV Headers Detected:", headers)  # Debugging statement
     except UnicodeDecodeError:
         st.error("There was an error decoding the CSV file. Please ensure it is in UTF-8 format.")
     except IndexError:
@@ -92,34 +94,33 @@ def replace_placeholders(document, data):
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
-    document_paths = []
-    zip_buffer = BytesIO()
+    if 'grantee_name' not in headers:
+        st.error("The CSV file is missing the 'grantee_name' header.")
+    else:
+        document_paths = []
+        zip_buffer = BytesIO()
 
-    with zipfile.ZipFile(zip_buffer, 'w') as zipf:
-        for row in data:
-            if 'grantee_name' not in row:
-                st.error("The CSV file is missing the 'grantee_name' header.")
-                continue
+        with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+            for row in data:
+                # Create a new document based on the template
+                new_document = deepcopy(template_document)
 
-            # Create a new document based on the template
-            new_document = deepcopy(template_document)
+                # Replace placeholders with data from the current row
+                replace_placeholders(new_document, row)
 
-            # Replace placeholders with data from the current row
-            replace_placeholders(new_document, row)
+                # Define the file path for the new document and change name
+                file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
+                doc_buffer = BytesIO()
+                new_document.save(doc_buffer)
+                doc_buffer.seek(0)
 
-            # Define the file path for the new document and change name
-            file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
-            doc_buffer = BytesIO()
-            new_document.save(doc_buffer)
-            doc_buffer.seek(0)
+                # Add the document to the zip file
+                zipf.writestr(file_name, doc_buffer.read())
 
-            # Add the document to the zip file
-            zipf.writestr(file_name, doc_buffer.read())
-
-    zip_buffer.seek(0)
-    st.download_button(
-        label="Download Documents",
-        data=zip_buffer,
-        file_name="documents.zip",
-        mime="application/zip"
-    )
+        zip_buffer.seek(0)
+        st.download_button(
+            label="Download Documents",
+            data=zip_buffer,
+            file_name="documents.zip",
+            mime="application/zip"
+        )
