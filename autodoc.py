@@ -33,9 +33,9 @@ In summary, every time you use the app, it starts with a clean slate, clearing a
 
 # Example CSV content
 example_csv = """
-grantee_name,grant_number,grantee_street,grantee_citystatezip,award_amount_numerical,convert_numbers_to_words,contact_name,contact_title,contact_number,contact_email,sig_name,sig_title,grantee_region,Cities_Counties_served
-Example Grantee,12345,123 Example St,Example City, ST 12345,1000,One Thousand,Jane Doe,Director,555-1234,jane.doe@example.com,John Smith,CEO,Example Region,Example Cities
-Another Grantee,67890,456 Another St,Another City, ST 67890,2000,Two Thousand,John Roe,Manager,555-5678,john.roe@example.com,Jane Smith,CFO,Another Region,Another Cities
+grantee_name,grant_number,grantee_street,grantee_citystatezip,award_amount_numerical,convert_numbers_to_words,contact_name,contact_title,contact_number,contact_email,sig_name,sig_title
+Example Grantee,12345,123 Example St,Example City, ST 12345,1000,One Thousand,Jane Doe,Director,555-1234,jane.doe@example.com,John Smith,CEO
+Another Grantee,67890,456 Another St,Another City, ST 67890,2000,Two Thousand,John Roe,Manager,555-5678,john.roe@example.com,Jane Smith,CFO
 """
 
 # Button to download the example CSV file
@@ -56,17 +56,9 @@ csv_file = st.file_uploader("Upload Data CSV (.csv)", type="csv")
 if csv_file:
     # Open the CSV file in text mode
     try:
-        # Read the CSV file and strip any leading/trailing spaces from the headers
         data = list(csv.DictReader(csv_file.getvalue().decode("utf-8").splitlines()))
-        if not data:
-            st.error("The CSV file is empty.")
-        else:
-            headers = [header.strip() for header in data[0].keys()]
-            st.write("CSV Headers Detected:", headers)  # Debugging statement
     except UnicodeDecodeError:
         st.error("There was an error decoding the CSV file. Please ensure it is in UTF-8 format.")
-    except IndexError:
-        st.error("The CSV file appears to be empty. Please provide a valid CSV file.")
 
 # Input for unique file name prefix
 unique_name = st.text_input("Enter a unique name for the generated files:")
@@ -77,67 +69,51 @@ document_type = st.selectbox(
     ["Award Letter", "Grant Agreement", "Commitment Letter", "Other"]
 )
 
-# Function to replace placeholders in text
-def replace_text(text, data):
-    for key, value in data.items():
-        placeholder = f"{{{key}}}"
-        if placeholder in text:
-            text = text.replace(placeholder, value)
-    return text
-
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
     for key, value in data.items():
-        placeholder = f"{{{key}}}"
         # Replace placeholders in the paragraphs
         for paragraph in document.paragraphs:
-            if placeholder in paragraph.text:
-                paragraph.text = replace_text(paragraph.text, data)
-        # Replace placeholders in the tables
-        for table in document.tables:
-            for row in table.rows:
-                for cell in row.cells:
-                    cell.text = replace_text(cell.text, data)
-        # Replace placeholders in the headers and footers
+            if key in paragraph.text:
+                paragraph.text = paragraph.text.replace(key, value)
+        # Replace placeholders in the header
         for section in document.sections:
             header = section.header
             for paragraph in header.paragraphs:
-                if placeholder in paragraph.text:
-                    paragraph.text = replace_text(paragraph.text, data)
-            footer = section.footer
-            for paragraph in footer.paragraphs:
-                if placeholder in paragraph.text:
-                    paragraph.text = replace_text(paragraph.text, data)
+                if key in paragraph.text:
+                    paragraph.text = paragraph.text.replace(key, value)
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
-    if 'grantee_name' not in headers:
-        st.error("The CSV file is missing the 'grantee_name' header.")
-    else:
-        document_paths = []
-        zip_buffer = BytesIO()
+    document_paths = []
+    zip_buffer = BytesIO()
 
-        with zipfile.ZipFile(zip_buffer, 'w') as zipf:
-            for row in data:
-                # Create a new document based on the template
-                new_document = deepcopy(template_document)
+    with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+        for row in data:
+            # Check for missing keys before processing
+            if 'grantee_name' not in row or 'grant_number' not in row:
+                st.error("Missing required fields in the CSV file.")
+                continue
 
-                # Replace placeholders with data from the current row
-                replace_placeholders(new_document, row)
+            # Create a new document based on the template
+            new_document = deepcopy(template_document)
 
-                # Define the file path for the new document and change name
-                file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
-                doc_buffer = BytesIO()
-                new_document.save(doc_buffer)
-                doc_buffer.seek(0)
+            # Replace placeholders with data from the current row
+            replace_placeholders(new_document, row)
 
-                # Add the document to the zip file
-                zipf.writestr(file_name, doc_buffer.read())
+            # Define the file path for the new document and change name
+            file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
+            doc_buffer = BytesIO()
+            new_document.save(doc_buffer)
+            doc_buffer.seek(0)
 
-        zip_buffer.seek(0)
-        st.download_button(
-            label="Download Documents",
-            data=zip_buffer,
-            file_name="documents.zip",
-            mime="application/zip"
-        )
+            # Add the document to the zip file
+            zipf.writestr(file_name, doc_buffer.read())
+
+    zip_buffer.seek(0)
+    st.download_button(
+        label="Download Documents",
+        data=zip_buffer,
+        file_name="documents.zip",
+        mime="application/zip"
+    )
