@@ -85,14 +85,18 @@ def replace_placeholders(document, data):
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
+    required_fields = ['grantee_name', 'grant_number', 'grantee_street', 'grantee_citystatezip',
+                       'award_amount_numerical', 'convert_numbers_to_words', 'contact_name', 
+                       'contact_title', 'contact_number', 'contact_email', 'sig_name', 'sig_title']
     document_paths = []
     zip_buffer = BytesIO()
 
     with zipfile.ZipFile(zip_buffer, 'w') as zipf:
         for row in data:
             # Check for missing keys before processing
-            if 'grantee_name' not in row or 'grant_number' not in row:
-                st.error("Missing required fields in the CSV file.")
+            missing_fields = [field for field in required_fields if field not in row]
+            if missing_fields:
+                st.error(f"Missing required fields in the CSV file: {', '.join(missing_fields)}")
                 continue
 
             # Create a new document based on the template
