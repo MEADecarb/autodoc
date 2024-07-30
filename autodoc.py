@@ -76,6 +76,7 @@ def replace_placeholders(document, data):
     def replace_text_in_run(run, placeholder, replacement):
         if placeholder in run.text:
             run.text = run.text.replace(placeholder, replacement)
+            st.write(f"Replaced '{placeholder}' with '{replacement}'")  # Debug: Show replacements
 
     for paragraph in document.paragraphs:
         for key, value in data.items():
