@@ -72,17 +72,28 @@ document_type = st.selectbox(
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
     for key, value in data.items():
-        placeholder = f"{{{key}}}"
+        placeholder = f"{{{{{key}}}}}"  # double braces to escape in f-string
         # Replace placeholders in the paragraphs
         for paragraph in document.paragraphs:
             if placeholder in paragraph.text:
                 paragraph.text = paragraph.text.replace(placeholder, value)
-        # Replace placeholders in the header
+        # Replace placeholders in the headers and footers
         for section in document.sections:
             header = section.header
             for paragraph in header.paragraphs:
                 if placeholder in paragraph.text:
                     paragraph.text = paragraph.text.replace(placeholder, value)
+            footer = section.footer
+            for paragraph in footer.paragraphs:
+                if placeholder in paragraph.text:
+                    paragraph.text = paragraph.text.replace(placeholder, value)
+        # Replace placeholders in tables
+        for table in document.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.paragraphs:
+                        if placeholder in paragraph.text:
+                            paragraph.text = paragraph.text.replace(placeholder, value)
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
