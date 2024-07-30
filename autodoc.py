@@ -132,4 +132,13 @@ if st.button("Generate Documents") and template_file and csv_file and unique_nam
             new_document.save(doc_buffer)
             doc_buffer.seek(0)
 
-            # A
+            # Add the document to the zip file
+            zipf.writestr(file_name, doc_buffer.read())
+
+    zip_buffer.seek(0)
+    st.download_button(
+        label="Download Documents",
+        data=zip_buffer,
+        file_name="documents.zip",
+        mime="application/zip"
+    )
