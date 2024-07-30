@@ -4,10 +4,12 @@ from docx import Document
 import zipfile
 from copy import deepcopy
 from io import BytesIO
+from docx.shared import Pt
+from docx.enum.style import WD_STYLE_TYPE
 
 # Function to reset the session state
 def reset_state():
-    st.session_state.clear()
+  st.session_state.clear()
 
 # Call the reset_state function at the start of the app
 reset_state()
@@ -40,105 +42,102 @@ Another Grantee,67890,456 Another St,Another City, ST 67890,2000,Two Thousand,Jo
 
 # Button to download the example CSV file
 st.download_button(
-    label="Download Example CSV",
-    data=example_csv,
-    file_name="example.csv",
-    mime="text/csv"
+  label="Download Example CSV",
+  data=example_csv,
+  file_name="example.csv",
+  mime="text/csv"
 )
 
 # Upload the template document
 template_file = st.file_uploader("Upload Document Template (.docx)", type="docx")
 if template_file:
-    template_document = Document(template_file)
+  template_document = Document(template_file)
 
 # Upload the CSV file
 csv_file = st.file_uploader("Upload Data CSV (.csv)", type="csv")
 if csv_file:
-    # Open the CSV file in text mode
-    try:
-        csv_data = csv_file.getvalue().decode("utf-8").splitlines()
-        data = list(csv.DictReader(csv_data))
-        st.write("CSV Data:", data)  # Debug: Show CSV data
-    except UnicodeDecodeError:
-        st.error("There was an error decoding the CSV file. Please ensure it is in UTF-8 format.")
+  # Open the CSV file in text mode
+  try:
+      csv_data = csv_file.getvalue().decode("utf-8").splitlines()
+      data = list(csv.DictReader(csv_data))
+      st.write("CSV Data:", data)  # Debug: Show CSV data
+  except UnicodeDecodeError:
+      st.error("There was an error decoding the CSV file. Please ensure it is in UTF-8 format.")
 
 # Input for unique file name prefix
 unique_name = st.text_input("Enter a unique name for the generated files:")
 
 # Dropdown for document type selection
 document_type = st.selectbox(
-    "Select the type of document:",
-    ["Award Letter", "Grant Agreement", "Commitment Letter", "Other"]
+  "Select the type of document:",
+  ["Award Letter", "Grant Agreement", "Commitment Letter", "Other"]
 )
 
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
-    def replace_text_in_run(run, placeholder, replacement):
-        if placeholder in run.text:
-            st.write(f"Original run text: {run.text}")  # Debug: Show original run text
-            run.text = run.text.replace(placeholder, replacement)
-            st.write(f"Replaced '{placeholder}' with '{replacement}' in run text")  # Debug: Show replacements
-            st.write(f"Modified run text: {run.text}")  # Debug: Show modified run text
+  # Create a new style for the replacements
+  style = document.styles.add_style('ReplacementStyle', WD_STYLE_TYPE.CHARACTER)
+  font = style.font
+  font.name = 'Times New Roman'
+  font.size = Pt(12)
+  font.bold = True
 
-    for paragraph in document.paragraphs:
-        original_paragraph_text = paragraph.text
-        for key, value in data.items():
-            placeholder = f"{{{key}}}"
-            for run in paragraph.runs:
-                replace_text_in_run(run, placeholder, str(value))
-        st.write(f"Original paragraph text: {original_paragraph_text}")  # Debug: Show original paragraph text
-        st.write(f"Modified paragraph text: {paragraph.text}")  # Debug: Show modified paragraph text
+  def replace_text_in_paragraph(paragraph, data):
+      for key, value in data.items():
+          placeholder = f"{{{key}}}"
+          if placeholder in paragraph.text:
+              # Split the paragraph text by the placeholder
+              parts = paragraph.text.split(placeholder)
+              paragraph.clear()
+              for i, part in enumerate(parts):
+                  # Add the non-placeholder text
+                  run = paragraph.add_run(part)
+                  if i < len(parts) - 1:
+                      # Add the replacement text with the new style
+                      replacement_run = paragraph.add_run(str(value))
+                      replacement_run.style = 'ReplacementStyle'
 
-    for section in document.sections:
-        for part in (section.header, section.footer):
-            for paragraph in part.paragraphs:
-                original_paragraph_text = paragraph.text
-                for key, value in data.items():
-                    placeholder = f"{{{key}}}"
-                    for run in paragraph.runs:
-                        replace_text_in_run(run, placeholder, str(value))
-                st.write(f"Original header/footer paragraph text: {original_paragraph_text}")  # Debug: Show original header/footer paragraph text
-                st.write(f"Modified header/footer paragraph text: {paragraph.text}")  # Debug: Show modified header/footer paragraph text
+  for paragraph in document.paragraphs:
+      replace_text_in_paragraph(paragraph, data)
 
-    for table in document.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    original_paragraph_text = paragraph.text
-                    for key, value in data.items():
-                        placeholder = f"{{{key}}}"
-                        for run in paragraph.runs:
-                            replace_text_in_run(run, placeholder, str(value))
-                    st.write(f"Original table cell paragraph text: {original_paragraph_text}")  # Debug: Show original table cell paragraph text
-                    st.write(f"Modified table cell paragraph text: {paragraph.text}")  # Debug: Show modified table cell paragraph text
+  for section in document.sections:
+      for part in (section.header, section.footer):
+          for paragraph in part.paragraphs:
+              replace_text_in_paragraph(paragraph, data)
+
+  for table in document.tables:
+      for row in table.rows:
+          for cell in row.cells:
+              for paragraph in cell.paragraphs:
+                  replace_text_in_paragraph(paragraph, data)
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
-    document_paths = []
-    zip_buffer = BytesIO()
+  document_paths = []
+  zip_buffer = BytesIO()
 
-    with zipfile.ZipFile(zip_buffer, 'w') as zipf:
-        for row in data:
-            st.write("Processing row:", row)  # Debug: Show current row being processed
-            # Create a new document based on the template
-            new_document = deepcopy(template_document)
+  with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+      for row in data:
+          st.write("Processing row:", row)  # Debug: Show current row being processed
+          # Create a new document based on the template
+          new_document = deepcopy(template_document)
 
-            # Replace placeholders with data from the current row
-            replace_placeholders(new_document, row)
+          # Replace placeholders with data from the current row
+          replace_placeholders(new_document, row)
 
-            # Define the file path for the new document and change name
-            file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
-            doc_buffer = BytesIO()
-            new_document.save(doc_buffer)
-            doc_buffer.seek(0)
+          # Define the file path for the new document and change name
+          file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
+          doc_buffer = BytesIO()
+          new_document.save(doc_buffer)
+          doc_buffer.seek(0)
 
-            # Add the document to the zip file
-            zipf.writestr(file_name, doc_buffer.read())
+          # Add the document to the zip file
+          zipf.writestr(file_name, doc_buffer.read())
 
-    zip_buffer.seek(0)
-    st.download_button(
-        label="Download Documents",
-        data=zip_buffer,
-        file_name="documents.zip",
-        mime="application/zip"
-    )
+  zip_buffer.seek(0)
+  st.download_button(
+      label="Download Documents",
+      data=zip_buffer,
+      file_name="documents.zip",
+      mime="application/zip"
+  )
