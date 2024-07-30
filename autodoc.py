@@ -101,4 +101,28 @@ if st.button("Generate Documents") and template_file and csv_file and unique_nam
     document_paths = []
     zip_buffer = BytesIO()
 
-    with zipfile.ZipFile(zip_buffer, 'w') as zipf
+    with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+        for row in data:
+            st.write("Processing row:", row)  # Debug: Show current row being processed
+            # Create a new document based on the template
+            new_document = deepcopy(template_document)
+
+            # Replace placeholders with data from the current row
+            replace_placeholders(new_document, row)
+
+            # Define the file path for the new document and change name
+            file_name = f"{unique_name}_{row['grantee_name']}_{document_type.replace(' ', '')}.docx"
+            doc_buffer = BytesIO()
+            new_document.save(doc_buffer)
+            doc_buffer.seek(0)
+
+            # Add the document to the zip file
+            zipf.writestr(file_name, doc_buffer.read())
+
+    zip_buffer.seek(0)
+    st.download_button(
+        label="Download Documents",
+        data=zip_buffer,
+        file_name="documents.zip",
+        mime="application/zip"
+    )
