@@ -73,19 +73,23 @@ document_type = st.selectbox(
 
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
+    def replace_text_in_run(run, placeholder, replacement):
+        if placeholder in run.text:
+            run.text = run.text.replace(placeholder, replacement)
+
     for paragraph in document.paragraphs:
         for key, value in data.items():
             placeholder = f"{{{key}}}"
-            if placeholder in paragraph.text:
-                paragraph.text = paragraph.text.replace(placeholder, str(value))
+            for run in paragraph.runs:
+                replace_text_in_run(run, placeholder, str(value))
 
     for section in document.sections:
         for part in (section.header, section.footer):
             for paragraph in part.paragraphs:
                 for key, value in data.items():
                     placeholder = f"{{{key}}}"
-                    if placeholder in paragraph.text:
-                        paragraph.text = paragraph.text.replace(placeholder, str(value))
+                    for run in paragraph.runs:
+                        replace_text_in_run(run, placeholder, str(value))
 
     for table in document.tables:
         for row in table.rows:
@@ -93,8 +97,8 @@ def replace_placeholders(document, data):
                 for paragraph in cell.paragraphs:
                     for key, value in data.items():
                         placeholder = f"{{{key}}}"
-                        if placeholder in paragraph.text:
-                            paragraph.text = paragraph.text.replace(placeholder, str(value))
+                        for run in paragraph.runs:
+                            replace_text_in_run(run, placeholder, str(value))
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
