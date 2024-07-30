@@ -72,33 +72,25 @@ document_type = st.selectbox(
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
     for key, value in data.items():
+        placeholder = f"{{{key}}}"
         # Replace placeholders in the paragraphs
         for paragraph in document.paragraphs:
-            if key in paragraph.text:
-                paragraph.text = paragraph.text.replace(key, value)
+            if placeholder in paragraph.text:
+                paragraph.text = paragraph.text.replace(placeholder, value)
         # Replace placeholders in the header
         for section in document.sections:
             header = section.header
             for paragraph in header.paragraphs:
-                if key in paragraph.text:
-                    paragraph.text = paragraph.text.replace(key, value)
+                if placeholder in paragraph.text:
+                    paragraph.text = paragraph.text.replace(placeholder, value)
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
-    required_fields = ['grantee_name', 'grant_number', 'grantee_street', 'grantee_citystatezip',
-                       'award_amount_numerical', 'convert_numbers_to_words', 'contact_name', 
-                       'contact_title', 'contact_number', 'contact_email', 'sig_name', 'sig_title']
     document_paths = []
     zip_buffer = BytesIO()
 
     with zipfile.ZipFile(zip_buffer, 'w') as zipf:
         for row in data:
-            # Check for missing keys before processing
-            missing_fields = [field for field in required_fields if field not in row]
-            if missing_fields:
-                st.error(f"Missing required fields in the CSV file: {', '.join(missing_fields)}")
-                continue
-
             # Create a new document based on the template
             new_document = deepcopy(template_document)
 
