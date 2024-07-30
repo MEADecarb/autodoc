@@ -4,8 +4,10 @@ from docx import Document
 import zipfile
 from copy import deepcopy
 from io import BytesIO
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 from docx.enum.style import WD_STYLE_TYPE
+from docx.oxml.shared import OxmlElement
+from docx.oxml.ns import qn
 
 # Function to reset the session state
 def reset_state():
@@ -73,6 +75,20 @@ document_type = st.selectbox(
   ["Award Letter", "Grant Agreement", "Commitment Letter", "Other"]
 )
 
+# Function to create an element with a specific color fill
+def create_element(name):
+  return OxmlElement(name)
+
+def create_attribute(element, name, value):
+  element.set(qn(name), value)
+
+def add_shading_to_run(run, fill_color):
+  shd = create_element('w:shd')
+  create_attribute(shd, 'w:val', 'clear')
+  create_attribute(shd, 'w:color', 'auto')
+  create_attribute(shd, 'w:fill', fill_color)
+  run._element.rPr.append(shd)
+
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
   # Create a new style for the replacements
@@ -96,6 +112,7 @@ def replace_placeholders(document, data):
                       # Add the replacement text with the new style
                       replacement_run = paragraph.add_run(str(value))
                       replacement_run.style = 'ReplacementStyle'
+                      add_shading_to_run(replacement_run, 'FF6D01')  # Orange background
 
   for paragraph in document.paragraphs:
       replace_text_in_paragraph(paragraph, data)
@@ -116,9 +133,17 @@ if st.button("Generate Documents") and template_file and csv_file and unique_nam
   document_paths = []
   zip_buffer = BytesIO()
 
+  # Create a progress bar
+  progress_bar = st.progress(0)
+  status_text = st.empty()
+
   with zipfile.ZipFile(zip_buffer, 'w') as zipf:
-      for row in data:
-          st.write("Processing row:", row)  # Debug: Show current row being processed
+      for i, row in enumerate(data):
+          # Update progress bar
+          progress = (i + 1) / len(data)
+          progress_bar.progress(progress)
+          status_text.text(f"Processing document {i+1} of {len(data)}")
+
           # Create a new document based on the template
           new_document = deepcopy(template_document)
 
@@ -134,7 +159,12 @@ if st.button("Generate Documents") and template_file and csv_file and unique_nam
           # Add the document to the zip file
           zipf.writestr(file_name, doc_buffer.read())
 
+  # Clear the progress bar and status text
+  progress_bar.empty()
+  status_text.empty()
+
   zip_buffer.seek(0)
+  st.success("Documents generated successfully!")
   st.download_button(
       label="Download Documents",
       data=zip_buffer,
