@@ -75,31 +75,42 @@ document_type = st.selectbox(
 def replace_placeholders(document, data):
     def replace_text_in_run(run, placeholder, replacement):
         if placeholder in run.text:
+            st.write(f"Original run text: {run.text}")  # Debug: Show original run text
             run.text = run.text.replace(placeholder, replacement)
-            st.write(f"Replaced '{placeholder}' with '{replacement}'")  # Debug: Show replacements
+            st.write(f"Replaced '{placeholder}' with '{replacement}' in run text")  # Debug: Show replacements
+            st.write(f"Modified run text: {run.text}")  # Debug: Show modified run text
 
     for paragraph in document.paragraphs:
+        original_paragraph_text = paragraph.text
         for key, value in data.items():
             placeholder = f"{{{key}}}"
             for run in paragraph.runs:
                 replace_text_in_run(run, placeholder, str(value))
+        st.write(f"Original paragraph text: {original_paragraph_text}")  # Debug: Show original paragraph text
+        st.write(f"Modified paragraph text: {paragraph.text}")  # Debug: Show modified paragraph text
 
     for section in document.sections:
         for part in (section.header, section.footer):
             for paragraph in part.paragraphs:
+                original_paragraph_text = paragraph.text
                 for key, value in data.items():
                     placeholder = f"{{{key}}}"
                     for run in paragraph.runs:
                         replace_text_in_run(run, placeholder, str(value))
+                st.write(f"Original header/footer paragraph text: {original_paragraph_text}")  # Debug: Show original header/footer paragraph text
+                st.write(f"Modified header/footer paragraph text: {paragraph.text}")  # Debug: Show modified header/footer paragraph text
 
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
+                    original_paragraph_text = paragraph.text
                     for key, value in data.items():
                         placeholder = f"{{{key}}}"
                         for run in paragraph.runs:
                             replace_text_in_run(run, placeholder, str(value))
+                    st.write(f"Original table cell paragraph text: {original_paragraph_text}")  # Debug: Show original table cell paragraph text
+                    st.write(f"Modified table cell paragraph text: {paragraph.text}")  # Debug: Show modified table cell paragraph text
 
 # Generate documents and create a zip file
 if st.button("Generate Documents") and template_file and csv_file and unique_name:
@@ -121,13 +132,4 @@ if st.button("Generate Documents") and template_file and csv_file and unique_nam
             new_document.save(doc_buffer)
             doc_buffer.seek(0)
 
-            # Add the document to the zip file
-            zipf.writestr(file_name, doc_buffer.read())
-
-    zip_buffer.seek(0)
-    st.download_button(
-        label="Download Documents",
-        data=zip_buffer,
-        file_name="documents.zip",
-        mime="application/zip"
-    )
+            # A
