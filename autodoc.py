@@ -4,10 +4,8 @@ from docx import Document
 import zipfile
 from copy import deepcopy
 from io import BytesIO
-from docx.shared import Pt, RGBColor
+from docx.shared import Pt
 from docx.enum.style import WD_STYLE_TYPE
-from docx.oxml.shared import OxmlElement
-from docx.oxml.ns import qn
 
 # Function to reset the session state
 def reset_state():
@@ -75,20 +73,6 @@ document_type = st.selectbox(
   ["Award Letter", "Grant Agreement", "Commitment Letter", "Other"]
 )
 
-# Function to create an element with a specific color fill
-def create_element(name):
-  return OxmlElement(name)
-
-def create_attribute(element, name, value):
-  element.set(qn(name), value)
-
-def add_shading_to_run(run, fill_color):
-  shd = create_element('w:shd')
-  create_attribute(shd, 'w:val', 'clear')
-  create_attribute(shd, 'w:color', 'auto')
-  create_attribute(shd, 'w:fill', fill_color)
-  run._element.rPr.append(shd)
-
 # Function to replace placeholders in the document
 def replace_placeholders(document, data):
   # Create a new style for the replacements
@@ -96,7 +80,7 @@ def replace_placeholders(document, data):
   font = style.font
   font.name = 'Times New Roman'
   font.size = Pt(12)
-  font.bold = True
+  font.italic = True  # Make the text italic instead of bold
 
   def replace_text_in_paragraph(paragraph, data):
       for key, value in data.items():
@@ -112,7 +96,6 @@ def replace_placeholders(document, data):
                       # Add the replacement text with the new style
                       replacement_run = paragraph.add_run(str(value))
                       replacement_run.style = 'ReplacementStyle'
-                      add_shading_to_run(replacement_run, 'FF6D01')  # Orange background
 
   for paragraph in document.paragraphs:
       replace_text_in_paragraph(paragraph, data)
