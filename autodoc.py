@@ -31,6 +31,9 @@ This application is designed with your privacy and data security in mind. Here's
 4. **Security:** This process helps ensure that your sensitive information remains secure and is not accessible after you finish using the app.
 
 In summary, every time you use the app, it starts with a clean slate, clearing all previous session data to protect your privacy and keep your data secure.
+
+## Parent Document Fields
+**Please wrap the fields you want to automatically populate with {} within the parent document. You DO NOT need to wrap the csv headers.**
 """)
 
 # Example CSV content
